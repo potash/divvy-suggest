@@ -1,0 +1,141 @@
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+		<title>heatmap.js OpenLayers Heatmap Layer</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<style>
+			body, html {
+				margin:0;
+				padding:0;
+				font-family:Arial;
+			}
+			h1 {
+				margin-bottom:10px;
+			}
+			#main {
+				position:relative;
+				width:1020px;
+				padding:20px;
+				margin:auto;
+			}
+			#heatmapArea {
+				position:relative;
+				float:left;
+				width:800px;
+				height:600px;
+				border:1px dashed black;
+			}
+			#configArea {
+				position:relative;
+				float:left;
+				width:200px;
+				padding:15px;
+				padding-top:0;
+				padding-right:0;
+			}
+			.btn {
+				margin-top:25px;
+				padding:10px 20px 10px 20px;
+				-moz-border-radius:15px;
+				-o-border-radius:15px;
+				-webkit-border-radius:15px;
+				border-radius:15px;
+				border:2px solid black;
+				cursor:pointer;
+				color:white;
+				background-color:black;
+			}
+			#gen:hover{
+				background-color:grey;
+				color:black;
+			}
+			textarea{
+				width:260px;
+				padding:10px;
+				height:200px;
+			}
+			h2{
+				margin-top:0;
+			}
+		</style>
+
+
+	</head>
+	<body>
+		<div id="main">
+			<h1>Divvy Suggestions Heatmap by Eric Potash</h1>
+			<div id="heatmapArea">
+			</div>
+
+			<div style="position:absolute;width:940px;top:750px;text-align:center;">Using <a href="http://www.patrick-wied.at/static/heatmapjs/">heatmap.js</a> by <a href="http://www.patrick-wied.at" target="_blank">Patrick Wied</a></div>
+
+		</div>
+		<script src="http://openlayers.org/api/OpenLayers.js"></script>
+		<script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap.js"></script>
+		<script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap-openlayers.js"></script>
+		<script type="text/javascript" src="http:////ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script type="text/javascript">
+			var map, layer, heatmap, heatmapData;
+			var initPages = 22;
+			var initUrl = "http://suggest.divvybikes.com/api/places";
+
+			function fetchPlaces(url, fetchNext) {
+				$.ajax({dataType: "json", url: url,
+						success: function(data) {
+					   		if (fetchNext && data.metadata.next != null) {	
+								fetchPlaces(data.metadata.next, fetchNext);
+							}
+							addPlaces(data); 
+						},
+					error: function(jqXHR, textStatus, errorThrown) {
+						console.log(errorThrown);
+					}
+				});
+			}
+
+			$(document).ready(function() {
+				initHeatmap();
+				fetchPlaces(initUrl);
+				for(var i = 2; i < initPages; i++) {
+					fetchPlaces(initUrl + "?page=" + i);
+				}
+				fetchPlaces(initUrl + "?page=" + initPages, true);
+				});
+
+			function addPlaces(places) {
+				heatmapData.data = heatmapData.data.concat(
+						places.features.map(function(p) {
+							var support = p.properties.submission_sets.support == null ? 1 : p.properties.submission_sets.support.length;
+							heatmapData.max = Math.max(heatmapData.max, support);
+							return {
+								lonlat: new OpenLayers.LonLat(p.geometry.coordinates[0], p.geometry.coordinates[1]), 
+								count: support
+							};
+						}) 
+				);
+				heatmap.setDataSet(heatmapData);
+			}
+
+
+
+			function initHeatmap(){
+				heatmapData = { max: 1, data : [] };
+				map = new OpenLayers.Map( 'heatmapArea');
+				layer = new OpenLayers.Layer.OSM();
+
+				var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+				var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+				var chicagoLonLat = new OpenLayers.LonLat(-87.629767, 41.878247);
+
+				// create our heatmap layer
+				heatmap = new OpenLayers.Layer.Heatmap( "Heatmap Layer", map, layer, {visible: true, radius:30}, 
+					{isBaseLayer: false, opacity: 0.3, projection: fromProjection});
+				map.addLayers([layer, heatmap]);
+
+				map.setCenter(chicagoLonLat.transform(fromProjection,toProjection), 9);
+				heatmap.setDataSet(heatmapData);
+			}
+		</script>
+	</body>
+
+</html>
