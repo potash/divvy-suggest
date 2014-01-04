@@ -15,6 +15,7 @@
 			#main {
 				position:relative;
 				width:1020px;
+				padding:20px;
 				margin:auto;
 			}
 			#heatmapArea {
@@ -23,6 +24,35 @@
 				width:800px;
 				height:600px;
 				border:1px dashed black;
+			}
+			#configArea {
+				position:relative;
+				float:left;
+				width:200px;
+				padding:15px;
+				padding-top:0;
+				padding-right:0;
+			}
+			.btn {
+				margin-top:25px;
+				padding:10px 20px 10px 20px;
+				-moz-border-radius:15px;
+				-o-border-radius:15px;
+				-webkit-border-radius:15px;
+				border-radius:15px;
+				border:2px solid black;
+				cursor:pointer;
+				color:white;
+				background-color:black;
+			}
+			#gen:hover{
+				background-color:grey;
+				color:black;
+			}
+			textarea{
+				width:260px;
+				padding:10px;
+				height:200px;
 			}
 			h2{
 				margin-top:0;
@@ -47,8 +77,11 @@
 		<script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap.js"></script>
 		<script type="text/javascript" src="http://www.patrick-wied.at/static/heatmapjs/src/heatmap-openlayers.js"></script>
 		<script type="text/javascript" src="http:////ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+		<script type="text/javascript" src="stations.js"></script>
 		<script type="text/javascript">
-			var map, layer, heatmap, heatmapData;
+			var map, layer, heatmap, heatmapData, markers;
+			var fromProjection, toProjection;
+
 			var initPages = 22;
 			var initUrl = "http://suggest.divvybikes.com/api/places";
 
@@ -68,6 +101,7 @@
 
 			$(document).ready(function() {
 				initHeatmap();
+				addStations();
 				fetchPlaces(initUrl);
 				for(var i = 2; i < initPages; i++) {
 					fetchPlaces(initUrl + "?page=" + i);
@@ -89,15 +123,26 @@
 				heatmap.setDataSet(heatmapData);
 			}
 
+			function addStations() {
+				var size = new OpenLayers.Size(21,25);
+				var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
+				var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png', size, offset);
 
+				getStations().stationBeanList.forEach(function(s) {
+						markers.addMarker(new OpenLayers.Marker(
+								new OpenLayers.LonLat(s.longitude,s.latitude).transform(fromProjection,toProjection),
+								icon.clone())
+						);
+				});
+			}
 
 			function initHeatmap(){
 				heatmapData = { max: 1, data : [] };
 				map = new OpenLayers.Map( 'heatmapArea');
 				layer = new OpenLayers.Layer.OSM();
 
-				var fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
-				var toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+				fromProjection = new OpenLayers.Projection("EPSG:4326");   // Transform from WGS 1984
+				toProjection   = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
 				var chicagoLonLat = new OpenLayers.LonLat(-87.629767, 41.878247);
 
 				// create our heatmap layer
@@ -107,6 +152,10 @@
 
 				map.setCenter(chicagoLonLat.transform(fromProjection,toProjection), 9);
 				heatmap.setDataSet(heatmapData);
+
+				markers = new OpenLayers.Layer.Markers( "Markers" );
+				map.addLayer(markers);
+
 			}
 		</script>
 	</body>
