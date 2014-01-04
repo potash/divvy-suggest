@@ -21,11 +21,11 @@ function fetchPlaces(url, fetchNext) {
 function init(divId) {
 	initHeatmap(divId);
 	addStations();
-	/*fetchPlaces(initUrl);
+	fetchPlaces(initUrl);
 	for(var i = 2; i < initPages; i++) {
 		fetchPlaces(initUrl + "?page=" + i);
 	}
-	fetchPlaces(initUrl + "?page=" + initPages, true);*/
+	fetchPlaces(initUrl + "?page=" + initPages, true);
 }
 
 function addPlaces(places) {
