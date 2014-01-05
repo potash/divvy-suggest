@@ -43,14 +43,15 @@ function addPlaces(places) {
 }
 
 function addStations() {
-	var size = new OpenLayers.Size(21,25);
+	var size = new OpenLayers.Size(12,20);
 	var offset = new OpenLayers.Pixel(-(size.w/2), -size.h);
-	var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png', size, offset);
 
 	getStations().stationBeanList.forEach(function(s) {
+		var lonlat = new OpenLayers.LonLat(s.longitude,s.latitude).transform(fromProjection,toProjection);
+		var icon = new OpenLayers.Icon("http://cdn.leafletjs.com/leaflet-0.7.1/images/marker-icon.png", size, offset);
 		markers.addMarker(new OpenLayers.Marker(
-				new OpenLayers.LonLat(s.longitude,s.latitude).transform(fromProjection,toProjection),
-				icon.clone())
+				lonlat,
+				icon)
 			);
 	});
 }
@@ -69,7 +70,7 @@ function initHeatmap(divId) {
 			{isBaseLayer: false, opacity: 0.3, projection: fromProjection});
 	map.addLayers([layer, heatmap]);
 
-	map.setCenter(chicagoLonLat.transform(fromProjection,toProjection), 9);
+	map.setCenter(chicagoLonLat.transform(fromProjection,toProjection), 12);
 	heatmap.setDataSet(heatmapData);
 
 	markers = new OpenLayers.Layer.Markers( "Markers" );
