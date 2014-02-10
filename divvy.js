@@ -1,16 +1,26 @@
 var map, layer, heatmap, heatmapData, markers;
 var fromProjection, toProjection;
 
-var initPages = 22;
+var initPages = 25;
 var initUrl = "http://suggest.divvybikes.com/api/places";
 
-function fetchPlaces(url, fetchNext) {
-	$.ajax({dataType: "json", url: url,
+var csv = '';
+
+function getPageUrl(page) {
+	if (page == 1) {
+		return initUrl;
+	} else {
+		return initUrl + "?page=" + page;
+	}
+}
+
+function fetchPlaces(page, fetchNext) {
+	$.ajax({dataType: "json", url: getPageUrl(page),
 		success: function(data) {
-			if (fetchNext && data.metadata.next != null) {	
-				fetchPlaces(data.metadata.next, fetchNext);
+			if (fetchNext && data.metadata.next != null) {
+				fetchPlaces(data.metadata.next.match('\\d*$'), true);
 			}
-			addPlaces(data); 
+			addPlaces(data);
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			console.log(errorThrown);
@@ -21,17 +31,17 @@ function fetchPlaces(url, fetchNext) {
 function init(divId) {
 	initHeatmap(divId);
 	addStations();
-	fetchPlaces(initUrl);
-	for(var i = 2; i < initPages; i++) {
+	for(var i = 1; i < initPages; i++) {
 		fetchPlaces(initUrl + "?page=" + i);
 	}
-	fetchPlaces(initUrl + "?page=" + initPages, true);
+	fetchPlaces(initPages, true);
 }
 
 function addPlaces(places) {
 	heatmapData.data = heatmapData.data.concat(
 			places.features.map(function(p) {
 				var support = p.properties.submission_sets.support == null ? 1 : p.properties.submission_sets.support.length;
+				csv += p.properties.id + "," + p.geometry.coordinates[0] + "," + p.geometry.coordinates[1] + "," + support + "\n";
 				heatmapData.max = Math.max(heatmapData.max, support);
 				return {
 					lonlat: new OpenLayers.LonLat(p.geometry.coordinates[0], p.geometry.coordinates[1]), 
