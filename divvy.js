@@ -32,9 +32,8 @@ function init(divId) {
 	initHeatmap(divId);
 	addStations();
 	for(var i = 1; i < initPages; i++) {
-		fetchPlaces(initUrl + "?page=" + i);
+		fetchPlaces(i, i == initPages);
 	}
-	fetchPlaces(initPages, true);
 }
 
 function addPlaces(places) {
